@@ -63,9 +63,7 @@ def get_project(
     """
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
     if project.owner_id != current_user.id:
         raise HTTPException(
@@ -74,3 +72,30 @@ def get_project(
         )
 
     return project
+
+
+# No arquivo da rota projects, adicionar:
+@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_project(
+    project_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Excluir projeto
+    """
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    if project.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this project",
+        )
+
+    # O cascade no model já cuida de excluir boards, colunas e tasks relacionados
+    db.delete(project)
+    db.commit()
+
+    return None
