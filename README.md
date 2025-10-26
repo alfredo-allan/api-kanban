@@ -391,11 +391,11 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 
 ## 👨‍💻 Autor
 
-**Seu Nome**
+**Alfredo Allan**
 
-- GitHub: [@seu-usuario](https://github.com/seu-usuario)
-- LinkedIn: [Seu Nome](https://linkedin.com/in/seu-perfil)
-- Email: seu.email@example.com
+- GitHub: [@seu-usuario](https://github.com/alfredo-allan)
+- LinkedIn: [Seu Nome](https://linkedin.com/in/alfredo-allan)
+- Email: kali.sonic.developer@gmail.com
 
 ---
 
