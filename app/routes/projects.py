@@ -4,7 +4,7 @@ from typing import List
 from app.core.database import get_db
 from app.models.project import Project
 from app.models.user import User
-from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
+from app.schemas.project import ProjectCreate, ProjectResponse  # ✅ Remove ProjectUpdate não usado
 from app.middleware.auth import get_current_user
 
 router = APIRouter()
@@ -65,7 +65,8 @@ def get_project(
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
-    if project.owner_id != current_user.id:
+    # ✅ CORREÇÃO: Acessar o valor UUID da coluna
+    if str(project.owner_id) != str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this project",
@@ -74,7 +75,6 @@ def get_project(
     return project
 
 
-# No arquivo da rota projects, adicionar:
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_project(
     project_id: str,
@@ -88,7 +88,8 @@ def delete_project(
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
-    if project.owner_id != current_user.id:
+    # ✅ CORREÇÃO: Acessar o valor UUID da coluna
+    if str(project.owner_id) != str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to delete this project",

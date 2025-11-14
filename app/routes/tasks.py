@@ -34,16 +34,16 @@ def create_task(
     )
     position = (last_task.position + 1) if last_task else 0
 
-    # Criar tarefa
+    # Criar nova tarefa
     new_task = Task(
         title=task_data.title,
         description=task_data.description,
         priority=task_data.priority,
         due_date=task_data.due_date,
-        column_id=task_data.column_id,
+        column_id=task_data.column_id,  # type: ignore[attr-defined]
         assignee_id=task_data.assignee_id,
         created_by=current_user.id,
-        position=position,
+        position=position,  # type: ignore[attr-defined]
     )
 
     db.add(new_task)
@@ -68,7 +68,6 @@ def list_tasks(
     """
     query = db.query(Task)
 
-    # Aplicar filtros
     if column_id:
         query = query.filter(Task.column_id == column_id)
     if priority:
@@ -76,10 +75,7 @@ def list_tasks(
     if assignee_id:
         query = query.filter(Task.assignee_id == assignee_id)
 
-    # Ordenar por posição
     query = query.order_by(Task.position)
-
-    # Paginação
     tasks = query.offset(skip).limit(limit).all()
 
     return tasks
@@ -97,6 +93,7 @@ def get_task(
     task = db.query(Task).filter(Task.id == task_id).first()
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
     return task
 
 
@@ -108,13 +105,13 @@ def update_task(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Atualizar tarefa
+    Atualizar tarefa existente
     """
     task = db.query(Task).filter(Task.id == task_id).first()
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
-    # Atualizar campos
+    # Atualizar apenas os campos enviados
     update_data = task_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(task, field, value)
@@ -139,7 +136,7 @@ def move_task(
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
-    # Verificar se a coluna existe
+    # Verificar se a nova coluna existe
     column = db.query(Column).filter(Column.id == move_data.column_id).first()
     if not column:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Column not found")
@@ -148,11 +145,11 @@ def move_task(
     old_position = task.position
 
     # Atualizar coluna e posição
-    task.column_id = move_data.column_id
-    task.position = move_data.position
+    task.column_id = move_data.column_id  # type: ignore[attr-defined]
+    task.position = move_data.position  # type: ignore[attr-defined]
 
-    # Reorganizar posições na coluna antiga
-    if old_column_id != move_data.column_id:
+    # Reorganizar posições na coluna antiga, se a tarefa mudou de coluna
+    if str(old_column_id) != str(move_data.column_id):
         db.query(Task).filter(Task.column_id == old_column_id, Task.position > old_position).update(
             {Task.position: Task.position - 1}
         )
@@ -177,13 +174,13 @@ def delete_task(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Deletar tarefa
+    Deletar tarefa existente
     """
     task = db.query(Task).filter(Task.id == task_id).first()
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
-    # Reorganizar posições das tarefas restantes
+    # Reorganizar posições das tarefas restantes na mesma coluna
     db.query(Task).filter(Task.column_id == task.column_id, Task.position > task.position).update(
         {Task.position: Task.position - 1}
     )
@@ -201,7 +198,7 @@ def get_tasks_by_column(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Buscar tasks por coluna
+    Buscar todas as tarefas de uma coluna específica
     """
     column = db.query(Column).filter(Column.id == column_id).first()
     if not column:

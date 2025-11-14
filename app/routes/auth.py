@@ -60,19 +60,17 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     # Buscar usuário
     user = db.query(User).filter(User.username == credentials.username).first()
 
-    # Verificar se existe e se a senha está correta
-    if not user or not verify_password(credentials.password, user.password_hash):
+    # ✅ CORREÇÃO: Converter Column[str] para str
+    if not user or not verify_password(credentials.password, str(user.password_hash)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Verificar se está ativo
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user"
-        )
+    # ✅ CORREÇÃO: Acessar o valor booleano da coluna
+    if not bool(user.is_active):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
     # Criar tokens
     access_token = create_access_token(data={"sub": str(user.id)})

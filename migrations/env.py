@@ -2,37 +2,34 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
+import os
 import sys
-from pathlib import Path
 
-# Adicionar o diretório raiz ao path
-sys.path.append(str(Path(__file__).resolve().parents[1]))
+# Adicionar o diretório app ao Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(os.getcwd())
 
-# flake8: noqa: E402
-# Os imports abaixo precisam estar após o sys.path.append
-
-# Importar configurações e models
+# Importar a Base e settings
 from app.core.config import settings
-from app.core.database import Base
-from app.models import *  # noqa: F403, F401
+from app.models.base import Base
 
-# this is the Alembic Config object
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
 config = context.config
 
-# Substituir a URL do banco com a do .env
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
-
 # Interpret the config file for Python logging.
+# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here for 'autogenerate' support
+# add your model's MetaData object here
+# for 'autogenerate' support
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
-    url = config.get_main_option("sqlalchemy.url")
+    url = settings.DATABASE_URL
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -46,8 +43,12 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
+    # Usar a URL do settings em vez do alembic.ini
+    configuration = config.get_section(config.config_ini_section)
+    configuration["sqlalchemy.url"] = settings.DATABASE_URL
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
