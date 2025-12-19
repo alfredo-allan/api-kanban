@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     # ✅ Database: No Render, DATABASE_URL é obrigatória.
     # Deixamos vazio por padrão para forçar a leitura do ambiente.
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    DATABASE_URL: str = os.environ.get("DATABASE_URL") or "postgresql://user:pass@localhost:5432/db"
 
     @property
     def DATABASE_URL_ASYNC(self) -> str:
