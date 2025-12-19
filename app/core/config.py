@@ -8,12 +8,23 @@ class Settings(BaseSettings):
     Configurações da aplicação carregadas de variáveis de ambiente
     """
 
-    # ✅ Database
-    DATABASE_URL: str = "postgresql://kanban_user:kanban_pass@localhost:5432/kanban_db"
+    # ✅ Database: No Render, DATABASE_URL é obrigatória.
+    # Deixamos vazio por padrão para forçar a leitura do ambiente.
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
 
     @property
     def DATABASE_URL_ASYNC(self) -> str:
-        return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+        """Gera a URL assíncrona corrigindo o prefixo se necessário"""
+        url = self.DATABASE_URL
+        # Correção para o SQLAlchemy 2.0 que exige 'postgresql' em vez de 'postgres'
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+
+        if not url:
+            # Se chegar aqui vazio no Render, o log vai te avisar exatamente o motivo
+            return "postgresql+asyncpg://user:pass@localhost:5432/db_error"
+
+        return url.replace("postgresql://", "postgresql+asyncpg://")
 
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
@@ -24,19 +35,18 @@ class Settings(BaseSettings):
     # Application
     APP_NAME: str = "Kanban API"
     APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
 
-    # ✅ CORS: Adicionado o domínio oficial da sua Vercel
+    # Em produção no Render, defina a variável DEBUG=False no painel
+    DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
+
+    # ✅ CORS: Domínio da Vercel e Localhost
     ALLOWED_ORIGINS: str = (
         "http://localhost:5173," "http://localhost:3000," "https://visual-guard-kanban.vercel.app"
     )
 
     # Server
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
-
-    # Redis (opcional)
-    REDIS_URL: str = "redis://localhost:6379/0"
+    PORT: int = 10000
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore"
@@ -47,9 +57,13 @@ class Settings(BaseSettings):
         """Retorna lista de origens permitidas para CORS"""
         if not self.ALLOWED_ORIGINS:
             return []
-        # Quebra a string por vírgula e remove espaços extras
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
 
+
+# ✅ Ajuste manual final para garantir que a DATABASE_URL principal também esteja corrigida
+_raw_url = os.getenv("DATABASE_URL", "")
+if _raw_url.startswith("postgres://"):
+    os.environ["DATABASE_URL"] = _raw_url.replace("postgres://", "postgresql://", 1)
 
 # Instância global das configurações
 settings = Settings()
