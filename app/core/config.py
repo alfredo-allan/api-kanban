@@ -8,11 +8,9 @@ class Settings(BaseSettings):
     Configurações da aplicação carregadas de variáveis de ambiente
     """
 
-    # ✅ Database: No Render, a DATABASE_URL será injetada automaticamente.
-    # Se não houver, ele usa o fallback do localhost para seu desenvolvimento.
+    # ✅ Database
     DATABASE_URL: str = "postgresql://kanban_user:kanban_pass@localhost:5432/kanban_db"
 
-    # Geramos a URL assíncrona automaticamente para evitar erro de configuração manual
     @property
     def DATABASE_URL_ASYNC(self) -> str:
         return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
@@ -26,18 +24,18 @@ class Settings(BaseSettings):
     # Application
     APP_NAME: str = "Kanban API"
     APP_VERSION: str = "1.0.0"
-
-    # ✅ Importante: No Render, mude DEBUG para False nas variáveis de ambiente!
     DEBUG: bool = True
 
-    # CORS
-    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+    # ✅ CORS: Adicionado o domínio oficial da sua Vercel
+    ALLOWED_ORIGINS: str = (
+        "http://localhost:5173," "http://localhost:3000," "https://visual-guard-kanban.vercel.app"
+    )
 
-    # Server: O Render injeta a porta na variável PORT
+    # Server
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
-    # Redis
+    # Redis (opcional)
     REDIS_URL: str = "redis://localhost:6379/0"
 
     model_config = SettingsConfigDict(
@@ -49,6 +47,7 @@ class Settings(BaseSettings):
         """Retorna lista de origens permitidas para CORS"""
         if not self.ALLOWED_ORIGINS:
             return []
+        # Quebra a string por vírgula e remove espaços extras
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
 
 
