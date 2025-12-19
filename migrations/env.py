@@ -13,17 +13,12 @@ sys.path.append(os.getcwd())
 from app.core.config import settings
 from app.models.base import Base
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# Objeto de configuração do Alembic
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
 target_metadata = Base.metadata
 
 
@@ -43,8 +38,11 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    # Usar a URL do settings em vez do alembic.ini
-    configuration = config.get_section(config.config_ini_section)
+    # ✅ CORREÇÃO: Garante que configuration seja um dict, mesmo que a seção seja None
+    section = config.get_section(config.config_ini_section)
+    configuration = dict(section) if section is not None else {}
+
+    # Sobrescreve a URL com a variável de ambiente do settings
     configuration["sqlalchemy.url"] = settings.DATABASE_URL
 
     connectable = engine_from_config(
