@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routes import auth, tasks, projects, boards, columns
+from app.routes import auth, tasks, projects, boards, columns, documentation  # ✅ Apenas adicionado documentation
+
 
 # Criar aplicação FastAPI
 app = FastAPI(
@@ -54,17 +55,8 @@ async def shutdown_event():
     print("👋 Shutting down application...")
 
 
-# Rota raiz
-@app.get("/", tags=["Health"])
-async def root():
-    """
-    Endpoint raiz da API
-    """
-    return {
-        "message": f"Welcome to {settings.APP_NAME}",
-        "version": settings.APP_VERSION,
-        "docs": "/api/docs",
-    }
+# ✅ Rota raiz agora integrada com o router de documentação personalizada
+app.include_router(documentation.router)
 
 
 # Health check
