@@ -1,6 +1,7 @@
-FROM python:3.9-slim
+# ✅ Use o 3.11 que é estável e compatível com suas libs
+FROM python:3.11-slim
 
-# Dependências para psycopg2 e drivers de rede
+# Mantém o resto igual
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     gcc \
@@ -13,6 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Comando para FastAPI usando Gunicorn + UvicornWorker
-# O Render espera que sua API responda na porta definida pela variável $PORT
 CMD gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:${PORT:-10000}
