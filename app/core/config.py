@@ -5,26 +5,32 @@ import os
 
 class Settings(BaseSettings):
     """
-    Configurações da aplicação carregadas de variáveis de ambiente
+    Configurações da aplicação carregadas de variáveis de ambiente ou arquivo .env
     """
 
-    # ✅ Database: No Render, DATABASE_URL é obrigatória.
-    # Deixamos vazio por padrão para forçar a leitura do ambiente.
-    DATABASE_URL: str = os.environ.get("DATABASE_URL") or "postgresql://user:pass@localhost:5432/db"
+    # ✅ Database: Prioriza o que está no ambiente (Render) ou no .env (Secret File)
+    DATABASE_URL: str = (
+        os.environ.get("DATABASE_URL")
+        or "postgresql://kanban_user:kanban_pass@localhost:5432/kanban_db"
+    )
 
     @property
     def DATABASE_URL_ASYNC(self) -> str:
-        """Gera a URL assíncrona corrigindo o prefixo se necessário"""
+        """Gera a URL assíncrona corrigindo o prefixo para SQLAlchemy 2.0"""
         url = self.DATABASE_URL
-        # Correção para o SQLAlchemy 2.0 que exige 'postgresql' em vez de 'postgres'
+
+        # 1. Correção para o SQLAlchemy 2.0 (exige 'postgresql' em vez de 'postgres')
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
 
-        if not url:
-            # Se chegar aqui vazio no Render, o log vai te avisar exatamente o motivo
-            return "postgresql+asyncpg://user:pass@localhost:5432/db_error"
+        # 2. Segurança: Se a URL ainda contiver o texto de exemplo, resetamos para localhost
+        if "SUA_URL_AQUI" in url:
+            url = "postgresql://kanban_user:kanban_pass@localhost:5432/kanban_db"
 
-        return url.replace("postgresql://", "postgresql+asyncpg://")
+        # 3. Transforma em Async (usado pelo FastAPI/SQLAlchemy Async)
+        if "postgresql+asyncpg://" not in url:
+            return url.replace("postgresql://", "postgresql+asyncpg://")
+        return url
 
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
@@ -33,13 +39,13 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # Application
-    APP_NAME: str = "Kanban API"
+    APP_NAME: str = "Leap Tech Kanban"
     APP_VERSION: str = "1.0.0"
 
-    # Em produção no Render, defina a variável DEBUG=False no painel
+    # DEBUG: No Render, a variável DEBUG=False no Secret File desativa o modo de inspeção
     DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
 
-    # ✅ CORS: Domínio da Vercel e Localhost
+    # ✅ CORS: Liberado para Vercel e Localhost
     ALLOWED_ORIGINS: str = (
         "http://localhost:5173," "http://localhost:3000," "https://visual-guard-kanban.vercel.app"
     )
@@ -48,6 +54,7 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 10000
 
+    # Configuração do Pydantic para ler o arquivo .env
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore"
     )
@@ -60,10 +67,11 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
 
 
-# ✅ Ajuste manual final para garantir que a DATABASE_URL principal também esteja corrigida
-_raw_url = os.getenv("DATABASE_URL", "")
-if _raw_url.startswith("postgres://"):
-    os.environ["DATABASE_URL"] = _raw_url.replace("postgres://", "postgresql://", 1)
+# ✅ Ajuste manual final para garantir que a variável global DATABASE_URL esteja correta
+_db_url_raw = os.getenv("DATABASE_URL", "")
+if _db_url_raw.startswith("postgres://"):
+    os.environ["DATABASE_URL"] = _db_url_raw.replace("postgres://", "postgresql://", 1)
+
 
 # Instância global das configurações
 settings = Settings()
