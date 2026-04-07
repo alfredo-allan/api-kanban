@@ -421,6 +421,6 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 
 **⭐ Se este projeto foi útil, considere dar uma estrela!**
 
-Made with ❤️ and ☕ by [Seu Nome]
+Made with ❤️ and ☕ by [Alfredo Allan]
 
 </div>
